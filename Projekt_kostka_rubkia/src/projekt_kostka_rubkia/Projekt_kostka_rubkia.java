@@ -21,17 +21,13 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 	private static final long serialVersionUID = 1L;
 	private MainFrame frame;
 	private Box box;
-	private int imageHeight = 256;
-	private int imageWidth = 256;
+        private Box BoxThatWillBeUsed[][][];
+	private int imageHeight = 512;
+	private int imageWidth = 512;
 	private Canvas3D canvas;
 	private SimpleUniverse universe;
 	private BranchGroup group = new BranchGroup();
 	private PickCanvas pickCanvas;
-	private BufferedImage frontImage;
-	private Shape3D frontShape;
-	private Texture texture;
-	private Appearance appearance;
-	private TextureLoader loader;
 	private int lastX=-1;
 	private int lastY=-1;
 	private int mouseButton = 0;
@@ -107,38 +103,103 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 	private void startDrawing() {
                TransformGroup mouse = new TransformGroup();
                mouse.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-               BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 1000.0);
+               BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 10000.0);
             
+                BoxThatWillBeUsed  = new Box[3][3][3];
+               
 		setLayout(new BorderLayout());
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 		canvas = new Canvas3D(config);
 		universe = new SimpleUniverse(canvas);
 		add("Center", canvas);
 		positionViewer();
-		for(float x=0;x<3;x++)
-                {
-                    for(float y=0;y<3;y++)
-                    {
-                        for(float z=0;z<3;z++)
-                        {
-                            getScene(x,y,z,mouse);
-                         
-                        }
-                    }
-                }
-               
+		
+                //pieprzona kostka tak bo nie inaczej bo jestem leniwy
+                //moze kiedys trafi do funkcji
+                
+                //Środkowa ściana
+                getScene(0,0,0,mouse);
+                BoxThatWillBeUsed[1][1][1] = box;               
+                getScene(0.5f,0,0,mouse);
+                BoxThatWillBeUsed[2][1][1] = box;               
+                getScene(0.5f,-0.5f,0,mouse);
+                BoxThatWillBeUsed[2][2][1] = box;               
+                getScene(0,-0.5f,0,mouse);
+                BoxThatWillBeUsed[1][2][1] = box;               
+                getScene(-0.5f,-0.5f,0,mouse);
+                BoxThatWillBeUsed[0][2][1] = box;             
+                getScene(-0.5f,0,0,mouse);
+                BoxThatWillBeUsed[0][1][1] = box;               
+                getScene(-0.5f,0.5f,0,mouse);
+                BoxThatWillBeUsed[0][0][1] = box;               
+                getScene(0,0.5f,0,mouse);
+                BoxThatWillBeUsed[1][0][1] = box;               
+                getScene(0.5f,0.5f,0,mouse);
+                BoxThatWillBeUsed[2][0][1] = box;
+                
+                //Przednia ściana
+                
+                getScene(0,0,0.5f,mouse);
+                BoxThatWillBeUsed[1][1][0] = box;                
+                getScene(0.5f,0,0.5f,mouse);
+                BoxThatWillBeUsed[2][1][0] = box;               
+                getScene(0.5f,-0.5f,0.5f,mouse);
+                BoxThatWillBeUsed[2][2][0] = box;             
+                getScene(0,-0.5f,0.5f,mouse);
+                BoxThatWillBeUsed[1][2][0] = box;               
+                getScene(-0.5f,-0.5f,0.5f,mouse);
+                BoxThatWillBeUsed[0][2][0] = box;               
+                getScene(-0.5f,0,0.5f,mouse);
+                BoxThatWillBeUsed[0][1][0] = box;               
+                getScene(-0.5f,0.5f,0.5f,mouse);
+                BoxThatWillBeUsed[0][0][0] = box;               
+                getScene(0,0.5f,0.5f,mouse);
+                BoxThatWillBeUsed[1][0][0] = box;               
+                getScene(0.5f,0.5f,0.5f,mouse);
+                BoxThatWillBeUsed[2][0][0] = box;    
+                
+                //Tylna ściana
+                
+                getScene(0,0,-0.5f,mouse);
+                BoxThatWillBeUsed[1][1][2] = box;              
+                getScene(0.5f,0,-0.5f,mouse);
+                BoxThatWillBeUsed[2][1][2] = box;                
+                getScene(0.5f,-0.5f,-0.5f,mouse);
+                BoxThatWillBeUsed[2][2][2] = box;               
+                getScene(0,-0.5f,-0.5f,mouse);
+                BoxThatWillBeUsed[1][2][2] = box;               
+                getScene(-0.5f,-0.5f,-0.5f,mouse);
+                BoxThatWillBeUsed[0][2][2] = box;               
+                getScene(-0.5f,0,-0.5f,mouse);
+                BoxThatWillBeUsed[0][1][2] = box;               
+                getScene(-0.5f,0.5f,-0.5f,mouse);
+                BoxThatWillBeUsed[0][0][2] = box;                
+                getScene(0,0.5f,-0.5f,mouse);
+                BoxThatWillBeUsed[1][0][2] = box;               
+                getScene(0.5f,0.5f,-0.5f,mouse);
+                BoxThatWillBeUsed[2][0][2] = box;
+                
+                //koniec tej pieprzonej kostki bo tak bo jestem glupi 
+                
+                
+                //obrot kostki wzgledem srodka uniwersum LPM
                 MouseRotate behavior = new MouseRotate(mouse);
                 behavior.setSchedulingBounds(bounds);
                 behavior.setTransformGroup(mouse);
                 mouse.addChild(behavior);
+                //przesuwanie kostki bez obrotu PPM
                 MouseTranslate przesMysza = new MouseTranslate(mouse);
                 przesMysza.setSchedulingBounds(bounds);
                 mouse.addChild(przesMysza);
+                // odsuwanie/przyblizanie kostki w glebi
                 MouseZoom myszZoom = new MouseZoom(mouse);
                 myszZoom.setSchedulingBounds(bounds);
                 mouse.addChild(myszZoom);
+                
+                               
                 group.addChild(mouse);
 		universe.addBranchGraph(group);
+                
 		pickCanvas = new PickCanvas(canvas, group);
 		pickCanvas.setMode(PickInfo.PICK_BOUNDS);
 		canvas.addMouseMotionListener(this);
@@ -148,96 +209,36 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 		ViewingPlatform vp = universe.getViewingPlatform();
 		
 		Transform3D t3d = new Transform3D();
-		t3d.set(new Vector3f(0.75f,-0.75f,10.0f));
+		t3d.set(new Vector3f(0.0f,0f,5.0f));
                 
 		vp.getViewPlatformTransform().setTransform(t3d);
 
 	}
 	public void getScene(float xpos, float ypos, float zpos,TransformGroup mouse) {
 		addLights(group);
-		Appearance ap = getAppearance(new Color3f(Color.blue));
-		ap.setCapability(Appearance.ALLOW_TEXTURE_WRITE);
-		ap.setCapability(Appearance.ALLOW_TEXGEN_WRITE);
-		box = new Box(.49f, .49f, .49f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.green)));		 
-		box.setCapability(Box.ENABLE_APPEARANCE_MODIFY);
-		box.setCapability(Box.GEOMETRY_NOT_SHARED);		
-		box.setCapability(Box.ALLOW_LOCAL_TO_VWORLD_READ);
-		frontShape = box.getShape(Box.FRONT);
-		frontShape.setAppearance(ap);
-		 
-		box.getShape(Box.TOP).setAppearance(getAppearance(Color.magenta));
-		box.getShape(Box.BOTTOM).setAppearance(getAppearance(Color.orange)); ;
-		box.getShape(Box.RIGHT).setAppearance(getAppearance(Color.red));
-		box.getShape(Box.LEFT).setAppearance(getAppearance(Color.green)); 
+		
+		box = new Box(.248f, .248f, .248f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.red)));		 
+		
+		box.getShape(Box.FRONT).setAppearance(getAppearance(Color.BLUE));
+		box.getShape(Box.TOP).setAppearance(getAppearance(Color.WHITE));
+		box.getShape(Box.BOTTOM).setAppearance(getAppearance(new Color(255,92,0))); ;
+		box.getShape(Box.RIGHT).setAppearance(getAppearance(Color.RED));
+		box.getShape(Box.LEFT).setAppearance(getAppearance(Color.GREEN)); 
 		box.getShape(Box.BACK).setAppearance(getAppearance(new Color3f(Color.yellow))); ;
-		
-		frontImage = new BufferedImage(imageWidth, imageHeight,BufferedImage.TYPE_INT_RGB);
-		Graphics2D g = (Graphics2D)frontImage.getGraphics();
-		g.setColor(new Color(70,70,140));
-		g.fillRect(0, 0, imageWidth, imageHeight);
-		addTexture(frontImage, frontShape);	
-		
-               	    
+			    
                 boxTransformGroup = new TransformGroup();
 		boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
 		boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
                 
 		Transform3D transform = new Transform3D();
-                Vector3f vector = new Vector3f(xpos, -ypos, -zpos);
-                transform.setTranslation(vector);
-                
-                
+                Vector3f MadeRubix = new Vector3f(xpos, ypos, zpos);
+                transform.setTranslation(MadeRubix);
+               
                 boxTransformGroup.addChild(box);
                 boxTransformGroup.setTransform(transform);
                 
-		mouse.addChild(boxTransformGroup);
-		
+		mouse.addChild(boxTransformGroup);               		
 	}
-	public void addTexture(BufferedImage image, Shape3D shape) {
-		frontShape.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
-		appearance = shape.getAppearance();
-		appearance.setCapability(Appearance.ALLOW_TEXTURE_ATTRIBUTES_WRITE);
-		appearance.setCapability(Appearance.ALLOW_TEXTURE_WRITE);
-		appearance.setCapability(Appearance.ALLOW_MATERIAL_WRITE);
-		changeTexture( texture,  image,  shape);		
-		Color3f col = new Color3f(0.0f, 0.0f, 1.0f);
-		ColoringAttributes ca = new ColoringAttributes(col,
-				ColoringAttributes.NICEST);
-		appearance.setColoringAttributes(ca);
-		
-		}
-    public void changeTexture(Texture texture, BufferedImage image, Shape3D shape) {
-    	loader = new TextureLoader(image, "RGB",
-				TextureLoader.ALLOW_NON_POWER_OF_TWO);
-    	texture = loader.getTexture();
-		texture.setBoundaryModeS(Texture.CLAMP_TO_BOUNDARY);
-		texture.setBoundaryModeT(Texture.CLAMP_TO_BOUNDARY);
-		texture.setBoundaryColor(new Color4f(0.0f, 1.0f, 0.5f, 0f));
-		// Set up the texture attributes
-		// could be REPLACE, BLEND or DECAL instead of MODULATE
-		
-		// front = getAppearance(new Color3f(Color.YELLOW));
-		Color3f black = new Color3f(0.0f, 0.0f, 0.0f);
-		Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
-		Color3f red = new Color3f(0.7f, .15f, .15f);
-		appearance.setMaterial(new Material(red, black, red, white, 1.0f));		 
-		TextureAttributes texAttr = new TextureAttributes();
-		texAttr.setTextureMode(TextureAttributes.REPLACE);	
-		appearance.setTextureAttributes(texAttr);
-		appearance.setTexture(texture);
-		shape.setAppearance(appearance);
-	}
-		
-	BufferedImage getStartingImage(int i, int width, int height) {
-		BufferedImage image = new BufferedImage(width, height,
-				BufferedImage.TYPE_INT_RGB);
-		Graphics2D g = (Graphics2D)image.getGraphics();
-		g.setColor(new Color(70,70,140));
-		g.fillRect(0, 0, width, height);
-		return image;
-	}
-	
-	
 	
 	public static void addLights(BranchGroup group) {
 		Color3f light1Color = new Color3f(0.7f, 0.8f, 0.8f);
@@ -304,19 +305,17 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 		 if (Math.abs(intersectionPoint.x) < 0.5 && Math.abs(intersectionPoint.y) < 0.5)  {
 			 double x = (0.5 + intersectionPoint.x) * imageWidth;
 			 double y = (0.5 - intersectionPoint.y) * imageHeight;			 
-			 Graphics2D g = (Graphics2D) frontImage.getGraphics();
-			 g.setColor( Color.BLACK);
-			 g.setStroke(new BasicStroke(3));
+			 
 			 int iX = (int)(x + .5);
 			 int iY = (int)(y + .5);
 			 if (lastX < 0) {
 				 lastX = iX;
 				 lastY = iY;
 			 }
-			 g.drawLine(lastX, lastY, iX, iY);
+			
 			 lastX = iX;
 			 lastY = iY;
-             changeTexture(texture, frontImage, frontShape);
+                
 		 }	
 	}
 	
