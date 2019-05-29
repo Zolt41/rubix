@@ -16,6 +16,10 @@ import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.pickfast.PickCanvas;
 import com.sun.j3d.utils.universe.*;
 
+/**
+ *
+ * @author Patryk
+ */
 public class Projekt_kostka_rubkia extends Applet implements MouseListener, MouseMotionListener {
 	 
 	private static final long serialVersionUID = 1L;
@@ -32,7 +36,8 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 	private int lastY=-1;
 	private int mouseButton = 0;
 	private TransformGroup boxTransformGroup;
-	
+	private KeyListener l;
+        
 	public static void main(String[] args) {
               System.setProperty("sun.awt.noerasebackground", "true");
 		Projekt_kostka_rubkia object = new Projekt_kostka_rubkia();		 
@@ -43,63 +48,6 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 	public void init() {
   		startDrawing();
   	}
-
-	public Point3d getPosition(MouseEvent event) {
-		Point3d eyePos = new Point3d();
-		Point3d mousePos = new Point3d();
-		canvas.getCenterEyeInImagePlate(eyePos);
-		canvas.getPixelLocationInImagePlate(event.getX(), event.getY(), mousePos);
-		Transform3D transform = new Transform3D();
-		canvas.getImagePlateToVworld(transform);
-		transform.transform(eyePos);
-		transform.transform(mousePos);
-		Vector3d direction = new Vector3d(eyePos);
-		direction.sub(mousePos);
-		// three points on the plane
-		Point3d p1 = new Point3d(.5, -.5, .5);
-		Point3d p2 = new Point3d(.5, .5, .5);
-		Point3d p3 = new Point3d(-.5, .5, .5);
-		Transform3D currentTransform = new Transform3D();
-		box.getLocalToVworld(currentTransform);
-		currentTransform.transform(p1);
-		currentTransform.transform(p2);
-		currentTransform.transform(p3);		
-		Point3d intersection = getIntersection(eyePos, mousePos, p1, p2, p3);
-		currentTransform.invert();
-		currentTransform.transform(intersection);
-		return intersection;		
-	}
-	
-	/**
-	 * Returns the point where a line crosses a plane  
-	 */
-	Point3d getIntersection(Point3d line1, Point3d line2, 
-			Point3d plane1, Point3d plane2, Point3d plane3) {
-		Vector3d p1 = new Vector3d(plane1);
-		Vector3d p2 = new Vector3d(plane2);
-		Vector3d p3 = new Vector3d(plane3);
-		Vector3d p2minusp1 = new Vector3d(p2);
-		p2minusp1.sub(p1);
-		Vector3d p3minusp1 = new Vector3d(p3);
-		p3minusp1.sub(p1);
-		Vector3d normal = new Vector3d();
-		normal.cross(p2minusp1, p3minusp1);
-		// The plane can be defined by p1, n + d = 0
-		double d = -p1.dot(normal);
-		Vector3d i1 = new Vector3d(line1);
-		Vector3d direction = new Vector3d(line1);
-		direction.sub(line2);
-		double dot = direction.dot(normal);
-		if (dot == 0) return null;
-		double t = (-d - i1.dot(normal)) / (dot);
-		Vector3d intersection = new Vector3d(line1);
-		Vector3d scaledDirection = new Vector3d(direction);
-		scaledDirection.scale(t);
-		intersection.add(scaledDirection);
-		Point3d intersectionPoint = new Point3d(intersection);
-		return intersectionPoint;
-	}
-	
 	private void startDrawing() {
                TransformGroup mouse = new TransformGroup();
                mouse.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
@@ -113,13 +61,13 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 		universe = new SimpleUniverse(canvas);
 		add("Center", canvas);
 		positionViewer();
-		
-                //pieprzona kostka tak bo nie inaczej bo jestem leniwy
+		addLights(group);
+                //kostka tak bo nie inaczej bo jestem leniwy
                 //moze kiedys trafi do funkcji
                 
                 //Środkowa ściana
-                getScene(0,0,0,mouse);
-                BoxThatWillBeUsed[1][1][1] = box;               
+                getScene(0,0,0,mouse);              //tej kostki mogłoby nie byc
+                BoxThatWillBeUsed[1][1][1] = box;   //ale ja pozostawie
                 getScene(0.5f,0,0,mouse);
                 BoxThatWillBeUsed[2][1][1] = box;               
                 getScene(0.5f,-0.5f,0,mouse);
@@ -179,8 +127,7 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
                 getScene(0.5f,0.5f,-0.5f,mouse);
                 BoxThatWillBeUsed[2][0][2] = box;
                 
-                //koniec tej pieprzonej kostki bo tak bo jestem glupi 
-                
+                //koniec tejkostki bo tak bo jestem glupi 
                 
                 //obrot kostki wzgledem srodka uniwersum LPM
                 MouseRotate behavior = new MouseRotate(mouse);
@@ -191,12 +138,11 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
                 MouseTranslate przesMysza = new MouseTranslate(mouse);
                 przesMysza.setSchedulingBounds(bounds);
                 mouse.addChild(przesMysza);
-                // odsuwanie/przyblizanie kostki w glebi
+                // odsuwanie/przyblizanie kostki w glebi ŚPM
                 MouseZoom myszZoom = new MouseZoom(mouse);
                 myszZoom.setSchedulingBounds(bounds);
                 mouse.addChild(myszZoom);
-                
-                               
+                                            
                 group.addChild(mouse);
 		universe.addBranchGraph(group);
                 
@@ -204,6 +150,7 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 		pickCanvas.setMode(PickInfo.PICK_BOUNDS);
 		canvas.addMouseMotionListener(this);
 		canvas.addMouseListener(this);
+                canvas.addKeyListener(l);
 	}
         public void positionViewer() {
 		ViewingPlatform vp = universe.getViewingPlatform();
@@ -215,9 +162,8 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 
 	}
 	public void getScene(float xpos, float ypos, float zpos,TransformGroup mouse) {
-		addLights(group);
 		
-		box = new Box(.248f, .248f, .248f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.red)));		 
+		box = new Box(.2483f, .2483f, .2483f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.red)));		 
 		
 		box.getShape(Box.FRONT).setAppearance(getAppearance(Color.BLUE));
 		box.getShape(Box.TOP).setAppearance(getAppearance(Color.WHITE));
@@ -242,11 +188,9 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 	
 	public static void addLights(BranchGroup group) {
 		Color3f light1Color = new Color3f(0.7f, 0.8f, 0.8f);
-		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0),
-				100.0);
+		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0),100.0);
 		Vector3f light1Direction = new Vector3f(4.0f, -7.0f, -12.0f);
-		DirectionalLight light1 = new DirectionalLight(light1Color,
-				light1Direction);
+		DirectionalLight light1 = new DirectionalLight(light1Color,light1Direction);
 		light1.setInfluencingBounds(bounds);
 		group.addChild(light1);
 		AmbientLight light2 = new AmbientLight(new Color3f(0.3f, 0.3f, 0.3f));
@@ -289,9 +233,6 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 
 	@Override
 	public void mousePressed(MouseEvent event) {
-		lastX=-1;
-		lastY=-1;
-		mouseButton = event.getButton();
 	}
 
 	@Override
@@ -300,23 +241,7 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 
 	@Override
 	public void mouseDragged(MouseEvent event) {		
-		 if (mouseButton==MouseEvent.BUTTON1) return;
-		 Point3d  intersectionPoint = getPosition(event);
-		 if (Math.abs(intersectionPoint.x) < 0.5 && Math.abs(intersectionPoint.y) < 0.5)  {
-			 double x = (0.5 + intersectionPoint.x) * imageWidth;
-			 double y = (0.5 - intersectionPoint.y) * imageHeight;			 
-			 
-			 int iX = (int)(x + .5);
-			 int iY = (int)(y + .5);
-			 if (lastX < 0) {
-				 lastX = iX;
-				 lastY = iY;
-			 }
-			
-			 lastX = iX;
-			 lastY = iY;
-                
-		 }	
+		
 	}
 	
 	@Override
