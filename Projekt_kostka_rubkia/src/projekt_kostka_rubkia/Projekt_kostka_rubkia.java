@@ -15,6 +15,7 @@ import com.sun.j3d.utils.geometry.*;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.pickfast.PickCanvas;
 import com.sun.j3d.utils.universe.*;
+import static java.lang.Math.sqrt;
 
 /**
  *
@@ -49,9 +50,9 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
   		startDrawing();
   	}
 	private void startDrawing() {
-               TransformGroup mouse = new TransformGroup();
-               mouse.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-               BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 10000.0);
+                TransformGroup mouse = new TransformGroup();
+                mouse.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+                BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 10000.0);
             
                 BoxThatWillBeUsed  = new Box[3][3][3];
                
@@ -62,72 +63,28 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 		add("Center", canvas);
 		positionViewer();
 		addLights(group);
+                
                 //kostka tak bo nie inaczej bo jestem leniwy
                 //moze kiedys trafi do funkcji
                 
-                //Środkowa ściana
-                getScene(0,0,0,mouse);              //tej kostki mogłoby nie byc
-                BoxThatWillBeUsed[1][1][1] = box;   //ale ja pozostawie
-                getScene(0.5f,0,0,mouse);
-                BoxThatWillBeUsed[2][1][1] = box;               
-                getScene(0.5f,-0.5f,0,mouse);
-                BoxThatWillBeUsed[2][2][1] = box;               
-                getScene(0,-0.5f,0,mouse);
-                BoxThatWillBeUsed[1][2][1] = box;               
-                getScene(-0.5f,-0.5f,0,mouse);
-                BoxThatWillBeUsed[0][2][1] = box;             
-                getScene(-0.5f,0,0,mouse);
-                BoxThatWillBeUsed[0][1][1] = box;               
-                getScene(-0.5f,0.5f,0,mouse);
-                BoxThatWillBeUsed[0][0][1] = box;               
-                getScene(0,0.5f,0,mouse);
-                BoxThatWillBeUsed[1][0][1] = box;               
-                getScene(0.5f,0.5f,0,mouse);
-                BoxThatWillBeUsed[2][0][1] = box;
-                
-                //Przednia ściana
-                
-                getScene(0,0,0.5f,mouse);
-                BoxThatWillBeUsed[1][1][0] = box;                
-                getScene(0.5f,0,0.5f,mouse);
-                BoxThatWillBeUsed[2][1][0] = box;               
-                getScene(0.5f,-0.5f,0.5f,mouse);
-                BoxThatWillBeUsed[2][2][0] = box;             
-                getScene(0,-0.5f,0.5f,mouse);
-                BoxThatWillBeUsed[1][2][0] = box;               
-                getScene(-0.5f,-0.5f,0.5f,mouse);
-                BoxThatWillBeUsed[0][2][0] = box;               
-                getScene(-0.5f,0,0.5f,mouse);
-                BoxThatWillBeUsed[0][1][0] = box;               
-                getScene(-0.5f,0.5f,0.5f,mouse);
-                BoxThatWillBeUsed[0][0][0] = box;               
-                getScene(0,0.5f,0.5f,mouse);
-                BoxThatWillBeUsed[1][0][0] = box;               
-                getScene(0.5f,0.5f,0.5f,mouse);
-                BoxThatWillBeUsed[2][0][0] = box;    
-                
-                //Tylna ściana
-                
-                getScene(0,0,-0.5f,mouse);
-                BoxThatWillBeUsed[1][1][2] = box;              
-                getScene(0.5f,0,-0.5f,mouse);
-                BoxThatWillBeUsed[2][1][2] = box;                
-                getScene(0.5f,-0.5f,-0.5f,mouse);
-                BoxThatWillBeUsed[2][2][2] = box;               
-                getScene(0,-0.5f,-0.5f,mouse);
-                BoxThatWillBeUsed[1][2][2] = box;               
-                getScene(-0.5f,-0.5f,-0.5f,mouse);
-                BoxThatWillBeUsed[0][2][2] = box;               
-                getScene(-0.5f,0,-0.5f,mouse);
-                BoxThatWillBeUsed[0][1][2] = box;               
-                getScene(-0.5f,0.5f,-0.5f,mouse);
-                BoxThatWillBeUsed[0][0][2] = box;                
-                getScene(0,0.5f,-0.5f,mouse);
-                BoxThatWillBeUsed[1][0][2] = box;               
-                getScene(0.5f,0.5f,-0.5f,mouse);
-                BoxThatWillBeUsed[2][0][2] = box;
-                
-                //koniec tejkostki bo tak bo jestem glupi 
+                int xpos=0,ypos=0,zpos=0;
+                for(float x=0;x<3;x++)
+                {
+                    for(float y=0;y<3;y++)
+                    {
+                        for(float z=0;z<3;z++)
+                        {
+                             getScene(x,y,z, mouse);
+                             BoxThatWillBeUsed[xpos][ypos][zpos]  = box;
+                             zpos++;
+                        }
+                        ypos++;
+                        zpos=0;
+                    }
+                    xpos++;
+                    ypos=0;
+                }
+                //koniec tej kostki bo tak bo jestem glupi 
                 
                 //obrot kostki wzgledem srodka uniwersum LPM
                 MouseRotate behavior = new MouseRotate(mouse);
@@ -156,14 +113,14 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 		ViewingPlatform vp = universe.getViewingPlatform();
 		
 		Transform3D t3d = new Transform3D();
-		t3d.set(new Vector3f(0.0f,0f,5.0f));
+		t3d.set(new Vector3f(0.0f,0f,10.0f));
                 
 		vp.getViewPlatformTransform().setTransform(t3d);
 
 	}
 	public void getScene(float xpos, float ypos, float zpos,TransformGroup mouse) {
 		
-		box = new Box(.2483f, .2483f, .2483f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.red)));		 
+		box = new Box(.4993f, .4993f, .4993f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.red)));		 
 		
 		box.getShape(Box.FRONT).setAppearance(getAppearance(Color.BLUE));
 		box.getShape(Box.TOP).setAppearance(getAppearance(Color.WHITE));
@@ -175,7 +132,9 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
                 boxTransformGroup = new TransformGroup();
 		boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
 		boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-                
+                xpos=xpos-1f;
+                ypos=ypos-1f;
+                zpos=zpos-1f;
 		Transform3D transform = new Transform3D();
                 Vector3f MadeRubix = new Vector3f(xpos, ypos, zpos);
                 transform.setTranslation(MadeRubix);
