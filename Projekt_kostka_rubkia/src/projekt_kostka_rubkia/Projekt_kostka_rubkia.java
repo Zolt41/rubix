@@ -11,138 +11,148 @@ import com.sun.j3d.utils.applet.MainFrame;
 import com.sun.j3d.utils.behaviors.mouse.MouseRotate;
 import com.sun.j3d.utils.behaviors.mouse.MouseTranslate;
 import com.sun.j3d.utils.behaviors.mouse.MouseZoom;
+import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.*;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.pickfast.PickCanvas;
 import com.sun.j3d.utils.universe.*;
 import static java.lang.Math.sqrt;
 
-/**
- *
- * @author Patryk
- */
-public class Projekt_kostka_rubkia extends Applet implements MouseListener, MouseMotionListener {
+class kostka_rubkia extends Applet implements KeyListener {
 	 
-	private static final long serialVersionUID = 1L;
-	private MainFrame frame;
+        static GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
+        static Canvas3D canvas = new Canvas3D(config);
+        static SimpleUniverse universe = new SimpleUniverse(canvas);
+    
+        TransformGroup Transformacja_scianaLewa;
+        TransformGroup Transformacja_scianaSrodkowa;
+        TransformGroup Transformacja_scianaPrawa;
+        TransformGroup Transformacja_scianaPrzod;
+        TransformGroup Transformacja_scianaTyl;
+        TransformGroup Transformacja_scianaGora;
+        TransformGroup Transformacja_scianaDol;
+        TransformGroup transformGl; // główny TG
+        
+        Transform3D obrot1 = new Transform3D();
+        Transform3D obrot2 = new Transform3D();
+        Transform3D ustaw_obrot2 = new Transform3D();
 	private Box box;
         private Box BoxThatWillBeUsed[][][];
-	private int imageHeight = 512;
-	private int imageWidth = 512;
-	private Canvas3D canvas;
-	private SimpleUniverse universe;
-	private BranchGroup group = new BranchGroup();
+        private BranchGroup group = new BranchGroup();
 	private PickCanvas pickCanvas;
-	private int lastX=-1;
-	private int lastY=-1;
-	private int mouseButton = 0;
 	private TransformGroup boxTransformGroup;
-	private KeyListener l;
-        
-	public static void main(String[] args) {
-              System.setProperty("sun.awt.noerasebackground", "true");
-		Projekt_kostka_rubkia object = new Projekt_kostka_rubkia();		 
-		object.frame = new MainFrame(object, args, object.imageWidth, object.imageHeight);
-		object.validate();
-	}
+        private TransformGroup boxTransformGroup1;
+        private TransformGroup boxTransformGroup2;
+        private Matrix4d matrix = new Matrix4d();
+	
 
 	public void init() {
   		startDrawing();
   	}
 	private void startDrawing() {
-                TransformGroup mouse = new TransformGroup();
-                mouse.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-                BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 10000.0);
-            
                 BoxThatWillBeUsed  = new Box[3][3][3];
-               
+                
 		setLayout(new BorderLayout());
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 		canvas = new Canvas3D(config);
 		universe = new SimpleUniverse(canvas);
 		add("Center", canvas);
 		positionViewer();
-		addLights(group);
+                addLights(group);
+               
                 
-                //kostka tak bo nie inaczej bo jestem leniwy
-                //moze kiedys trafi do funkcji
+                Transformacja_scianaSrodkowa = new TransformGroup();
+                Transformacja_scianaSrodkowa.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+                Transformacja_scianaPrawa= new TransformGroup();
+                Transformacja_scianaPrawa.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+                Transformacja_scianaLewa = new TransformGroup();
+                Transformacja_scianaLewa.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
                 
-                int xpos=0,ypos=0,zpos=0;
-                for(float x=0;x<3;x++)
+                MakeCube();
+                
+                group.addChild(Transformacja_scianaSrodkowa);
+                
+                group.addChild(Transformacja_scianaPrawa);
+                group.addChild(Transformacja_scianaLewa);
+                universe.addBranchGraph(group);
+		
+                pickCanvas = new PickCanvas(canvas, group);
+		
+		pickCanvas.setMode(PickInfo.PICK_BOUNDS);
+                canvas.addKeyListener(this);
+                
+                   
+	}
+        public void MakeCube(){
+            for(float x=0;x<3;x++)
                 {
                     for(float y=0;y<3;y++)
                     {
                         for(float z=0;z<3;z++)
                         {
-                             getScene(x,y,z, mouse);
-                             BoxThatWillBeUsed[xpos][ypos][zpos]  = box;
-                             zpos++;
+                             getScene(x-1,y-1,z-1);
                         }
-                        ypos++;
-                        zpos=0;
                     }
-                    xpos++;
-                    ypos=0;
                 }
-                //koniec tej kostki bo tak bo jestem glupi 
-                
-                //obrot kostki wzgledem srodka uniwersum LPM
-                MouseRotate behavior = new MouseRotate(mouse);
-                behavior.setSchedulingBounds(bounds);
-                behavior.setTransformGroup(mouse);
-                mouse.addChild(behavior);
-                //przesuwanie kostki bez obrotu PPM
-                MouseTranslate przesMysza = new MouseTranslate(mouse);
-                przesMysza.setSchedulingBounds(bounds);
-                mouse.addChild(przesMysza);
-                // odsuwanie/przyblizanie kostki w glebi ŚPM
-                MouseZoom myszZoom = new MouseZoom(mouse);
-                myszZoom.setSchedulingBounds(bounds);
-                mouse.addChild(myszZoom);
-                                            
-                group.addChild(mouse);
-		universe.addBranchGraph(group);
-                
-		pickCanvas = new PickCanvas(canvas, group);
-		pickCanvas.setMode(PickInfo.PICK_BOUNDS);
-		canvas.addMouseMotionListener(this);
-		canvas.addMouseListener(this);
-                canvas.addKeyListener(l);
-	}
+            
+            
+        }
+        
         public void positionViewer() {
 		ViewingPlatform vp = universe.getViewingPlatform();
-		
+                
+		OrbitBehavior orbit = new OrbitBehavior(canvas, OrbitBehavior.REVERSE_ROTATE);
+                orbit.setSchedulingBounds(new BoundingSphere());
+                
 		Transform3D t3d = new Transform3D();
 		t3d.set(new Vector3f(0.0f,0f,10.0f));
                 
 		vp.getViewPlatformTransform().setTransform(t3d);
-
+                vp.setViewPlatformBehavior(orbit);
 	}
-	public void getScene(float xpos, float ypos, float zpos,TransformGroup mouse) {
+	public void getScene(float xpos, float ypos, float zpos) {
 		
-		box = new Box(.4993f, .4993f, .4993f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.red)));		 
+		box = new Box(.498f, .498f, .498f, Primitive.GENERATE_TEXTURE_COORDS,getAppearance(new Color3f(Color.red)));		 
 		
 		box.getShape(Box.FRONT).setAppearance(getAppearance(Color.BLUE));
 		box.getShape(Box.TOP).setAppearance(getAppearance(Color.WHITE));
-		box.getShape(Box.BOTTOM).setAppearance(getAppearance(new Color(255,92,0))); ;
+		box.getShape(Box.BOTTOM).setAppearance(getAppearance(new Color(255,92,0)));
 		box.getShape(Box.RIGHT).setAppearance(getAppearance(Color.RED));
 		box.getShape(Box.LEFT).setAppearance(getAppearance(Color.GREEN)); 
-		box.getShape(Box.BACK).setAppearance(getAppearance(new Color3f(Color.yellow))); ;
-			    
-                boxTransformGroup = new TransformGroup();
-		boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-		boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-                xpos=xpos-1f;
-                ypos=ypos-1f;
-                zpos=zpos-1f;
+		box.getShape(Box.BACK).setAppearance(getAppearance(new Color3f(Color.yellow)));
+                
 		Transform3D transform = new Transform3D();
                 Vector3f MadeRubix = new Vector3f(xpos, ypos, zpos);
                 transform.setTranslation(MadeRubix);
-               
-                boxTransformGroup.addChild(box);
-                boxTransformGroup.setTransform(transform);
+             
+                boxTransformGroup = new TransformGroup();
+                boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+              
+                boxTransformGroup1 = new TransformGroup();
+                boxTransformGroup1.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+              
+                boxTransformGroup2 = new TransformGroup();
+                boxTransformGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
                 
-		mouse.addChild(boxTransformGroup);               		
+           if(xpos == 0.0){
+              boxTransformGroup1.addChild(box);
+               boxTransformGroup1.setTransform(transform);
+               Transformacja_scianaSrodkowa.addChild(boxTransformGroup1);
+           }
+           else if(xpos == 1.0){
+               boxTransformGroup.addChild(box);
+               boxTransformGroup.setTransform(transform);
+               Transformacja_scianaPrawa.addChild(boxTransformGroup);
+           }
+           else {
+               
+               boxTransformGroup2.addChild(box);
+               boxTransformGroup2.setTransform(transform);
+               Transformacja_scianaLewa.addChild(boxTransformGroup2);
+              
+            }
+          
+           
 	}
 	
 	public static void addLights(BranchGroup group) {
@@ -160,50 +170,88 @@ public class Projekt_kostka_rubkia extends Applet implements MouseListener, Mous
 		return getAppearance(new Color3f(color));
 	}
 	public static Appearance getAppearance(Color3f color) {
-		Color3f black = new Color3f(0.0f, 0.0f, 0.0f);
-		Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
 		Appearance ap = new Appearance();
-		Texture texture = new Texture2D();
-		TextureAttributes texAttr = new TextureAttributes();
-		texAttr.setTextureMode(TextureAttributes.MODULATE);
-		texture.setBoundaryModeS(Texture.WRAP);
-		texture.setBoundaryModeT(Texture.WRAP);
-		texture.setBoundaryColor(new Color4f(0.0f, 1.0f, 0.0f, 0.0f));
-		Material mat = new Material(color, black, color, white, 70f);
-		ap.setTextureAttributes(texAttr);
-		ap.setMaterial(mat);
-		ap.setTexture(texture);	 
-		ColoringAttributes ca = new ColoringAttributes(color,
-				ColoringAttributes.NICEST);
+		ColoringAttributes ca = new ColoringAttributes(color,ColoringAttributes.NICEST);
 		ap.setColoringAttributes(ca);
 		return ap;
 	}
-	@Override
-	public void mouseClicked(MouseEvent arg0) {
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent arg0) {
-	}
-
-	@Override
-	public void mouseExited(MouseEvent arg0) {
-	}
-
-	@Override
-	public void mousePressed(MouseEvent event) {
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent arg0) {		
-	}
-
-	@Override
-	public void mouseDragged(MouseEvent event) {		
-		
-	}
 	
-	@Override
-	public void mouseMoved(MouseEvent arg0) {	
-	}
+    @Override
+    public void keyTyped(KeyEvent e) {
+       
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if(e.getKeyCode() == KeyEvent.VK_E){
+          MakeCube();
+          Transform3D t3d = new Transform3D();
+          t3d.set(new Vector3f(0.0f,0f,10.0f));
+          obrot1.rotX(Math.PI/2);
+          Transformacja_scianaPrawa.getTransform(t3d);
+          t3d.get(matrix);
+          t3d.setTranslation(new Vector3d(0.0,0.0,0.0));
+          t3d.mul(obrot1);
+          t3d.setTranslation(new Vector3d(matrix.m03,matrix.m13,matrix.m23));
+          Transformacja_scianaPrawa.setTransform(t3d);
+          
+        }
+         if(e.getKeyCode() == KeyEvent.VK_R){
+             MakeCube();
+          Transform3D t3d = new Transform3D();
+          t3d.set(new Vector3f(0.0f,0f,10.0f));
+          obrot1.rotX(-Math.PI/2);
+          Transformacja_scianaPrawa.getTransform(t3d);
+          t3d.get(matrix);
+          t3d.setTranslation(new Vector3d(0.0,0.0,0.0));
+          t3d.mul(obrot1);
+          t3d.setTranslation(new Vector3d(matrix.m03,matrix.m13,matrix.m23));
+          Transformacja_scianaPrawa.setTransform(t3d);
+        }
+        if(e.getKeyCode() == KeyEvent.VK_Q){
+            MakeCube();
+         Transform3D t3d = new Transform3D();
+          t3d.set(new Vector3f(0.0f,0f,10.0f));
+          obrot1.rotX(Math.PI/2);
+          Transformacja_scianaLewa.getTransform(t3d);
+          t3d.get(matrix);
+          t3d.setTranslation(new Vector3d(0.0,0.0,0.0));
+          t3d.mul(obrot1);
+          t3d.setTranslation(new Vector3d(matrix.m03,matrix.m13,matrix.m23));
+          Transformacja_scianaLewa.setTransform(t3d);
+         
+        }
+         if(e.getKeyCode() == KeyEvent.VK_W){
+           Transformacja_scianaLewa.removeAllChildren();
+           MakeCube();
+         Transform3D t3d = new Transform3D();
+          t3d.set(new Vector3f(0.0f,0f,10.0f));
+          obrot1.rotX(-Math.PI/2);
+          Transformacja_scianaLewa.getTransform(t3d);
+          t3d.get(matrix);
+          t3d.setTranslation(new Vector3d(0.0,0.0,0.0));
+          t3d.mul(obrot1);
+          t3d.setTranslation(new Vector3d(matrix.m03,matrix.m13,matrix.m23));
+          Transformacja_scianaLewa.setTransform(t3d);
+         
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+       
+    }
+       
+}
+public class Projekt_kostka_rubkia {
+    
+    /**
+     * Główna metoda klasy. W niej tworzony jest robot i dodawany jest KeyListener;
+     * @param args 
+     */
+    public static void main(String[] args) {
+        kostka_rubkia Rubix = new kostka_rubkia();
+        Rubix.addKeyListener(Rubix);
+        MainFrame mf = new MainFrame(Rubix, 640, 480);
+    }   
 }
