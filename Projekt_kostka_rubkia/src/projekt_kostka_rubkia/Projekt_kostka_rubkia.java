@@ -45,7 +45,6 @@ class kostka_rubkia extends Applet implements KeyListener {
     AxisAngle4f axisZ = new AxisAngle4f(0, 1, 1, (float) Math.PI);
     AxisAngle4f axisY = new AxisAngle4f(1, 1, 0, (float) Math.PI);
     AxisAngle4f axisX = new AxisAngle4f(1, 0, 1, (float) Math.PI);
-    int niechtodziala = 0;
 
     public void init() {
         startDrawing();
@@ -107,8 +106,8 @@ class kostka_rubkia extends Applet implements KeyListener {
                     WhereAreCubes[x][y][z] = HowManyCubesWereCreated;
 
                     newCube(x - 1, y - 1, z - 1, HowManyCubesWereCreated);
-//                    group[HowManyCubesWereCreated].addChild(TransformCube[HowManyCubesWereCreated]);
-//                    mainGroup.addChild(group[HowManyCubesWereCreated]);
+                    // group[HowManyCubesWereCreated].addChild(TransformCube[HowManyCubesWereCreated]);
+                    // mainGroup.addChild(group[HowManyCubesWereCreated]);
                     HowManyCubesWereCreated++;
                 }
             }
@@ -117,19 +116,25 @@ class kostka_rubkia extends Applet implements KeyListener {
 
     public void newCube(float xpos, float ypos, float zpos, int x) {
 
-        box = new Box(.498f, .498f, .498f, Primitive.GENERATE_TEXTURE_COORDS, getAppearance(new Color3f(Color.red)));
+        // box = new Box(.495f, .495f, .495f, Primitive.GENERATE_TEXTURE_COORDS, getAppearance(new Color3f(Color.red)));
+        // box.getShape(cubeWall[x][cubeWall[x][0]]).setAppearance(getAppearance(Color.BLUE));
+        // box.getShape(cubeWall[x][cubeWall[x][1]]).setAppearance(getAppearance(Color.WHITE));
+        // box.getShape(cubeWall[x][cubeWall[x][2]]).setAppearance(getAppearance(new Color(255, 92, 0)));
+        // box.getShape(cubeWall[x][cubeWall[x][3]]).setAppearance(getAppearance(Color.RED));
+        // box.getShape(cubeWall[x][cubeWall[x][4]]).setAppearance(getAppearance(Color.GREEN));
+        // box.getShape(cubeWall[x][cubeWall[x][5]]).setAppearance(getAppearance(new Color3f(Color.yellow))); // 1
+        box = new Box(.495f, .495f, .495f, Primitive.GENERATE_TEXTURE_COORDS, getAppearance(new Color3f(Color.red)));
         box.getShape(cubeWall[x][0]).setAppearance(getAppearance(Color.BLUE));
         box.getShape(cubeWall[x][1]).setAppearance(getAppearance(Color.WHITE));
         box.getShape(cubeWall[x][2]).setAppearance(getAppearance(new Color(255, 92, 0)));
         box.getShape(cubeWall[x][3]).setAppearance(getAppearance(Color.RED));
         box.getShape(cubeWall[x][4]).setAppearance(getAppearance(Color.GREEN));
-        box.getShape(cubeWall[x][5]).setAppearance(getAppearance(new Color3f(Color.yellow)));
+        box.getShape(cubeWall[x][5]).setAppearance(getAppearance(new Color3f(Color.yellow))); // 1
 
         Transform3D transform = new Transform3D();
         Vector3f MadeRubix = new Vector3f(xpos, ypos, zpos);
         transform.setTranslation(MadeRubix);
 
-        niechtodziala++;
         boxTransformGroup = new TransformGroup();
         boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 
@@ -154,7 +159,7 @@ class kostka_rubkia extends Applet implements KeyListener {
         orbit.setSchedulingBounds(new BoundingSphere());
 
         Transform3D t3d = new Transform3D();
-        t3d.set(new Vector3f(0.0f, 0f, 10.0f));
+        t3d.set(new Vector3f(0.0f, 0f, 15.0f));
 
         vp.getViewPlatformTransform().setTransform(t3d);
         vp.setViewPlatformBehavior(orbit);
@@ -227,8 +232,9 @@ class kostka_rubkia extends Applet implements KeyListener {
         }
     }
 
-    public void RotateX(TransformGroup Cube, double katObrotu, int WhichBoxOnX, int WhichBoxOnY, int WhichBoxOnZ, int zablokuj) {
-        int buffer = 0;
+    public void RotateX(TransformGroup Cube, double katObrotu, int WhichBoxOnX, int WhichBoxOnY, int WhichBoxOnZ,
+            int zablokuj) {
+        int buffer = 0, buffor = 0;
         obrocwX(Cube, katObrotu);
         if (zablokuj == 49) {
             Transform3D transform2 = new Transform3D();
@@ -238,23 +244,41 @@ class kostka_rubkia extends Applet implements KeyListener {
             mainGroup.removeChild(group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]]);
             buffer = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0];
             if (katObrotu < 0) {
+                obrocwX(Cube, Math.PI / 2);
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5] = buffer;
+
+                if (WhichBoxOnX == 0 && WhichBoxOnZ == 0) {
+                    buffor = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ + 2]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4] = buffor;
+                    if (WhichBoxOnX == 1 && WhichBoxOnZ == 0) {
+                        buffor = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 1][WhichBoxOnY][WhichBoxOnZ + 1]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX + 1][WhichBoxOnY][WhichBoxOnZ + 1]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4] = cubeWall[WhereAreCubes[WhichBoxOnX - 1][WhichBoxOnY][WhichBoxOnZ + 1]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX - 1][WhichBoxOnY][WhichBoxOnZ + 1]][4] = buffor;
+                    }
+                }
             } else {
+                obrocwX(Cube, -Math.PI / 2);
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = buffer;
             }
-            newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1, WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
+            newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1,
+                    WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
 
         }
     }
 
     public void RotateY(TransformGroup Cube, double katObrotu, int WhichBoxOnX, int WhichBoxOnY, int WhichBoxOnZ, int zablokuj) {
-        int buffer = 0;
+        int buffer = 0, buffor = 0, baffor = 0;
         obrocwY(Cube, katObrotu);
         if (zablokuj == 49) {
             Transform3D transform2 = new Transform3D();
@@ -268,11 +292,43 @@ class kostka_rubkia extends Applet implements KeyListener {
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3] = buffer;
+
+                if (WhichBoxOnX == 0 && WhichBoxOnZ == 0) {
+                    buffor = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ + 2]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4] = buffor;
+                    if (WhichBoxOnX == 1 && WhichBoxOnZ == 0) {
+                        buffor = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 1][WhichBoxOnY][WhichBoxOnZ + 1]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX + 1][WhichBoxOnY][WhichBoxOnZ + 1]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4] = cubeWall[WhereAreCubes[WhichBoxOnX - 1][WhichBoxOnY][WhichBoxOnZ + 1]][4];
+                        cubeWall[WhereAreCubes[WhichBoxOnX - 1][WhichBoxOnY][WhichBoxOnZ + 1]][4] = buffor;
+                    }
+                }
             } else {
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2] = buffer;
+
+                if (WhichBoxOnX == 0 && WhichBoxOnZ == 0) {
+                    buffor = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ + 2]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX + 2][WhichBoxOnY][WhichBoxOnZ]][4] = buffor;
+                }
+                if (WhichBoxOnX == 1 && WhichBoxOnZ == 0) {
+                    buffor = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX - 1][WhichBoxOnY][WhichBoxOnZ + 1]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX - 1][WhichBoxOnY][WhichBoxOnZ + 1]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ + 2]][4] = cubeWall[WhereAreCubes[WhichBoxOnX + 1][WhichBoxOnY][WhichBoxOnZ + 1]][4];
+                    cubeWall[WhereAreCubes[WhichBoxOnX + 1][WhichBoxOnY][WhichBoxOnZ + 1]][4] = buffor;
+                }
+
+                obrocwY(Cube, Math.PI / 2);
             }
             newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1, WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
 
@@ -294,13 +350,17 @@ class kostka_rubkia extends Applet implements KeyListener {
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3] = buffer;
+
+                obrocwZ(Cube, Math.PI / 2);
             } else {
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5] = cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2];
                 cubeWall[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2] = buffer;
+                obrocwZ(Cube, Math.PI / 2);
             }
-                newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1, WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
+            newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1,
+                    WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
         }
     }
 
