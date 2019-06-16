@@ -1,5 +1,6 @@
 package projekt_kostka_rubkia;
 
+import java.util.Random;
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
@@ -15,10 +16,12 @@ import com.sun.j3d.utils.geometry.*;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.pickfast.PickCanvas;
 import com.sun.j3d.utils.universe.*;
+import static java.awt.event.KeyEvent.*;
 import static java.lang.Math.sqrt;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static javafx.scene.input.KeyCode.*;
 
 class kostka_rubkia extends Applet implements KeyListener {
 
@@ -26,35 +29,29 @@ class kostka_rubkia extends Applet implements KeyListener {
     static Canvas3D canvas = new Canvas3D(config);
     static SimpleUniverse universe = new SimpleUniverse(canvas);
 
-    TransformGroup Transformacja_scianaLewa;
-    TransformGroup Transformacja_scianaSrodkowaOdOsiX;
-    TransformGroup Transformacja_scianaSrodkowaOdOsiY;
-    TransformGroup Transformacja_scianaSrodkowaOdOsiZ;
-    TransformGroup Transformacja_scianaPrawa;
-    TransformGroup Transformacja_scianaPrzod;
-    TransformGroup Transformacja_scianaTyl;
-    TransformGroup Transformacja_scianaGora;
-    TransformGroup Transformacja_scianaDol;
-    TransformGroup transformGl; // główny TG
-
-    Transform3D obrot1 = new Transform3D();
-    Transform3D obrot2 = new Transform3D();
-    Transform3D ustaw_obrot2 = new Transform3D();
+    private TransformGroup TransformCube[];
+    private TransformGroup cubeBuffer[];
+    private int WhereAreCubes[][][];
+    private Transform3D obrot1 = new Transform3D();
+    private Transform3D obrot2 = new Transform3D();
     private Box box;
-    private Box BoxThatWillBeUsed[][][];
-    private BranchGroup group = new BranchGroup();
+    private BranchGroup group[];
+    private BranchGroup mainGroup;
+    private BranchGroup textGroup;
     private PickCanvas pickCanvas;
     private TransformGroup boxTransformGroup;
-    // private TransformGroup boxTransformGroup1;
-    // private TransformGroup boxTransformGroup2;
-    private Matrix4d matrix = new Matrix4d();
-
+    private Transform3D transform = new Transform3D();
+    private Vector3f position = new Vector3f();
+    private Vector3f position1 = new Vector3f();
+    private boolean instruction = true;
+    private boolean mama = false;
+    private Color cubeWallsColor[][] = new Color[27][6];
+   
     public void init() {
         startDrawing();
     }
 
     private void startDrawing() {
-        BoxThatWillBeUsed = new Box[3][3][3];
 
         setLayout(new BorderLayout());
         GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
@@ -62,63 +59,103 @@ class kostka_rubkia extends Applet implements KeyListener {
         universe = new SimpleUniverse(canvas);
         add("Center", canvas);
         positionViewer();
-        addLights(group);
 
-        // Transformacja_scianaSrodkowaOdOsiX = new TransformGroup();
-        // Transformacja_scianaSrodkowaOdOsiX.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaPrawa = new TransformGroup();
-        // Transformacja_scianaPrawa.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaLewa = new TransformGroup();
-        // Transformacja_scianaLewa.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaSrodkowaOdOsiY = new TransformGroup();
-        // Transformacja_scianaSrodkowaOdOsiY.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaGora = new TransformGroup();
-        // Transformacja_scianaGora.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaDol = new TransformGroup();
-        // Transformacja_scianaDol.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaSrodkowaOdOsiZ = new TransformGroup();
-        // Transformacja_scianaSrodkowaOdOsiZ.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaPrzod = new TransformGroup();
-        // Transformacja_scianaPrzod.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Transformacja_scianaTyl = new TransformGroup();
-        // Transformacja_scianaTyl.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        textGroup = new BranchGroup();
+        textGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        textGroup.setCapability(Group.ALLOW_CHILDREN_EXTEND);
+        textGroup.setCapability(Group.ALLOW_CHILDREN_WRITE);
+        textGroup.setCapability(BranchGroup.ALLOW_DETACH);
+        mainGroup = new BranchGroup();
+        mainGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        mainGroup.setCapability(Group.ALLOW_CHILDREN_EXTEND);
+        mainGroup.setCapability(Group.ALLOW_CHILDREN_WRITE);
+        mainGroup.setCapability(BranchGroup.ALLOW_DETACH);
 
+        TransformCube = new TransformGroup[27];
+        cubeBuffer = new TransformGroup[27];
+        WhereAreCubes = new int[3][3][3];
+        group = new BranchGroup[27];
+
+        creatInitialCoditions();
+        addLights(mainGroup);
         MakeCube1();
-
-        Transformacja_scianaSrodkowaOdOsiX.addChild(Transformacja_scianaSrodkowaOdOsiY);
-        Transformacja_scianaSrodkowaOdOsiY.addChild(Transformacja_scianaSrodkowaOdOsiZ);
-        Transformacja_scianaPrawa.addChild(Transformacja_scianaGora);
-        Transformacja_scianaGora.addChild(Transformacja_scianaPrzod);
-        Transformacja_scianaLewa.addChild(Transformacja_scianaDol);
-        Transformacja_scianaDol.addChild(Transformacja_scianaTyl);
-        boxTransformGroup.removeChild(box);
-        group.addChild(Transformacja_scianaSrodkowaOdOsiX);
-        group.addChild(Transformacja_scianaPrawa);
-        group.addChild(Transformacja_scianaLewa);
-        universe.addBranchGraph(group);
-
-        pickCanvas = new PickCanvas(canvas, group);
-
+        creatInstruction();
+        
+        universe.addBranchGraph(mainGroup);
+        pickCanvas = new PickCanvas(canvas, mainGroup);
         pickCanvas.setMode(PickInfo.PICK_BOUNDS);
         canvas.addKeyListener(this);
+    }
+    
+    private void creatInitialCoditions(){
+        for (int x = 0; x < 27; x++) {
+            for (int color = 0; color < 6; color++) {
+                switch(color){
+                    case 0: cubeWallsColor[x][color] = Color.BLUE; break;
+                    case 1: cubeWallsColor[x][color] = Color.WHITE; break;
+                    case 2: cubeWallsColor[x][color] = new Color(255, 92, 0); break;
+                    case 3: cubeWallsColor[x][color] = Color.RED; break;
+                    case 4: cubeWallsColor[x][color] = Color.GREEN; break;
+                    case 5: cubeWallsColor[x][color] = Color.YELLOW; break;
+                }
+            }
+            cubeBuffer[x] = new TransformGroup();
+            cubeBuffer[x].setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+            cubeBuffer[x].setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+            cubeBuffer[x].setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+            cubeBuffer[x].setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
 
+            group[x] = new BranchGroup();
+            group[x].setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+            group[x].setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+            group[x].setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+            group[x].setCapability(Group.ALLOW_CHILDREN_WRITE);
+            group[x].setCapability(BranchGroup.ALLOW_DETACH);
+
+        }
+    }
+    
+    public void MakeCube1() {
+        int HowManyCubesWereCreated = 0;
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                for (int z = 0; z < 3; z++) {
+                    WhereAreCubes[x][y][z] = HowManyCubesWereCreated;
+                    newCube(x - 1, y - 1, z - 1, HowManyCubesWereCreated);
+                    HowManyCubesWereCreated++;
+                }
+            }
+        }
     }
 
-    public void MakeCube1() {
-        int xpos = 0, ypos = 0, zpos = 0;
-        for (float x = 0; x < 3; x++) {
-            for (float y = 0; y < 3; y++) {
-                for (float z = 0; z < 3; z++) {
-                    getScene1(x - 1, y - 1, z - 1);
-                    BoxThatWillBeUsed[xpos][ypos][zpos] = box;
-                    zpos++;
-                }
-                ypos++;
-                zpos = 0;
-            }
-            xpos++;
-            ypos = 0;
-        }
+    public void newCube(float xpos, float ypos, float zpos, int x) {
+
+        box = new Box(.495f, .495f, .495f, Primitive.GENERATE_TEXTURE_COORDS, getAppearance(new Color3f(Color.red)));
+        box.getShape(0).setAppearance(getAppearance(cubeWallsColor[x][0])); //front
+        box.getShape(1).setAppearance(getAppearance(cubeWallsColor[x][1])); //back
+        box.getShape(2).setAppearance(getAppearance(cubeWallsColor[x][2])); //right
+        box.getShape(3).setAppearance(getAppearance(cubeWallsColor[x][3])); //left
+        box.getShape(4).setAppearance(getAppearance(cubeWallsColor[x][4])); //top
+        box.getShape(5).setAppearance(getAppearance(cubeWallsColor[x][5])); //bottom
+
+        Transform3D transform = new Transform3D();
+        Vector3f MadeRubix = new Vector3f(xpos, ypos, zpos);
+        transform.setTranslation(MadeRubix);
+
+        boxTransformGroup = new TransformGroup();
+        boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+
+        TransformCube[x] = new TransformGroup();
+        TransformCube[x].setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        TransformCube[x].setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        TransformCube[x].setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+        TransformCube[x].setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
+
+        boxTransformGroup.addChild(box);
+        boxTransformGroup.setTransform(transform);
+        TransformCube[x].addChild(boxTransformGroup);
+        group[x].addChild(TransformCube[x]);
+        mainGroup.addChild(group[x]);
     }
 
     public void positionViewer() {
@@ -128,50 +165,10 @@ class kostka_rubkia extends Applet implements KeyListener {
         orbit.setSchedulingBounds(new BoundingSphere());
 
         Transform3D t3d = new Transform3D();
-        t3d.set(new Vector3f(0.0f, 0f, 10.0f));
+        t3d.set(new Vector3f(0.0f, 0f, 17.0f));
 
         vp.getViewPlatformTransform().setTransform(t3d);
         vp.setViewPlatformBehavior(orbit);
-    }
-
-    public void getScene1(float xpos, float ypos, float zpos) {
-
-        box = new Box(.498f, .498f, .498f, Primitive.GENERATE_TEXTURE_COORDS, getAppearance(new Color3f(Color.red)));
-
-        box.getShape(Box.FRONT).setAppearance(getAppearance(Color.BLUE));
-        box.getShape(Box.TOP).setAppearance(getAppearance(Color.WHITE));
-        box.getShape(Box.BOTTOM).setAppearance(getAppearance(new Color(255, 92, 0)));
-        box.getShape(Box.RIGHT).setAppearance(getAppearance(Color.RED));
-        box.getShape(Box.LEFT).setAppearance(getAppearance(Color.GREEN));
-        box.getShape(Box.BACK).setAppearance(getAppearance(new Color3f(Color.yellow)));
-
-        Transform3D transform = new Transform3D();
-        Vector3f MadeRubix = new Vector3f(xpos, ypos, zpos);
-        transform.setTranslation(MadeRubix);
-
-        boxTransformGroup = new TransformGroup();
-        boxTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-
-        // boxTransformGroup1 = new TransformGroup();
-        // boxTransformGroup1.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-
-        boxTransformGroup2 = new TransformGroup();
-        boxTransformGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-
-        if (zpos == 0.0) {
-            boxTransformGroup1.addChild(box);
-            boxTransformGroup1.setTransform(transform);
-            Transformacja_scianaSrodkowaOdOsiZ.addChild(boxTransformGroup1);
-        } else if (zpos == 1.0) {
-            boxTransformGroup.addChild(box);
-            boxTransformGroup.setTransform(transform);
-            Transformacja_scianaPrzod.addChild(boxTransformGroup);
-        } else {
-            boxTransformGroup2.addChild(box);
-            boxTransformGroup2.setTransform(transform);
-            Transformacja_scianaTyl.addChild(boxTransformGroup2);
-
-        }
     }
 
     public static void addLights(BranchGroup group) {
@@ -197,60 +194,121 @@ class kostka_rubkia extends Applet implements KeyListener {
         return ap;
     }
 
-    public void rotateOX(TransformGroup group, double katObrotu) {
-        for (int i = 0; i < 250; i++) {
-            Transform3D t3d = new Transform3D();
-            t3d.set(new Vector3f(0.0f, 0f, 10.0f));
-            obrot1.rotX(katObrotu);
-            group.getTransform(t3d);
-            t3d.get(matrix);
-            t3d.setTranslation(new Vector3d(0.0, 0.0, 0.0));
-            t3d.mul(obrot1);
-            t3d.setTranslation(new Vector3d(matrix.m03, matrix.m13, matrix.m23));
-            group.setTransform(t3d);
-            try {
-                TimeUnit.NANOSECONDS.sleep(1);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(kostka_rubkia.class.getName()).log(Level.SEVERE, null, ex);
-            }
+    public void obrocwX(TransformGroup group, double katObrotu) {
+        Transform3D t3d = new Transform3D();
+        t3d.set(new Vector3f(0.0f, 0.0f, 0.0f));
+        obrot1.rotX(katObrotu);
+        group.getTransform(t3d);
+        t3d.mul(obrot1);
+        group.setTransform(t3d);
+        try {
+            TimeUnit.MICROSECONDS.sleep(1000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(kostka_rubkia.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    public void obrocwY(TransformGroup group, double katObrotu) {
+        Transform3D t3d = new Transform3D();
+        t3d.set(new Vector3f(0.0f, 0f, 0.0f));
+        obrot1.rotY(katObrotu);
+        group.getTransform(t3d);
+        t3d.mul(obrot1);
+        group.setTransform(t3d);
+        try {
+            TimeUnit.MICROSECONDS.sleep(1000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(kostka_rubkia.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void rotateOY(TransformGroup group, double katObrotu) {
-        for (int i = 0; i < 250; i++) {
-            Transform3D t3d = new Transform3D();
-            t3d.set(new Vector3f(0.0f, 0f, 10.0f));
-            obrot1.rotY(katObrotu);
-            group.getTransform(t3d);
-            t3d.get(matrix);
-            t3d.setTranslation(new Vector3d(0.0, 0.0, 0.0));
-            t3d.mul(obrot1);
-            t3d.setTranslation(new Vector3d(matrix.m03, matrix.m13, matrix.m23));
-            group.setTransform(t3d);
-            try {
-                TimeUnit.NANOSECONDS.sleep(1);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(kostka_rubkia.class.getName()).log(Level.SEVERE, null, ex);
-            }
+    public void obrocwZ(TransformGroup group, double katObrotu) {
+        Transform3D t3d = new Transform3D();
+        obrot1.rotZ(katObrotu);
+        group.getTransform(t3d);
+        t3d.mul(obrot1);
+        group.setTransform(t3d);
+        try {
+            TimeUnit.MICROSECONDS.sleep(1000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(kostka_rubkia.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void rotateOZ(TransformGroup group, double katObrotu) {
-        for (int i = 0; i < 250; i++) {
-            Transform3D t3d = new Transform3D();
-            t3d.set(new Vector3f(0.0f, 0f, 10.0f));
-            obrot1.rotZ(katObrotu);
-            group.getTransform(t3d);
-            t3d.get(matrix);
-            t3d.setTranslation(new Vector3d(0.0, 0.0, 0.0));
-            t3d.mul(obrot1);
-            t3d.setTranslation(new Vector3d(matrix.m03, matrix.m13, matrix.m23));
-            group.setTransform(t3d);
-            try {
-                TimeUnit.NANOSECONDS.sleep(1);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(kostka_rubkia.class.getName()).log(Level.SEVERE, null, ex);
+    public void RotateX(TransformGroup Cube, double katObrotu, int WhichBoxOnX, int WhichBoxOnY, int WhichBoxOnZ, int zablokuj) {
+        Color buffor;
+        obrocwX(Cube, katObrotu);
+        if (zablokuj == 49) {
+            Transform3D transform2 = new Transform3D();
+            transform2.setScale(0);
+            Cube.setTransform(transform2);
+            group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]].detach();
+            mainGroup.removeChild(group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]]);
+            buffor = cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0];
+            if (katObrotu > 0) {
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5]=buffor;
+            } else {
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4]=buffor;
             }
+            newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1,WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
+        }
+    }
+
+    public void RotateY(TransformGroup Cube, double katObrotu, int WhichBoxOnX, int WhichBoxOnY, int WhichBoxOnZ, int zablokuj) {
+        Color buffor;
+        obrocwY(Cube, katObrotu);
+        if (zablokuj == 49) {
+            Transform3D transform2 = new Transform3D();
+            transform2.setScale(0);
+            Cube.setTransform(transform2);
+            group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]].detach();
+            mainGroup.removeChild(group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]]);
+            buffor = cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0];
+            if (katObrotu > 0) {
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2]=buffor;
+            } else {
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][1]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3]=buffor;
+            }
+            newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1, WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
+        } 
+        
+    }
+
+    public void RotateZ(TransformGroup Cube, double katObrotu, int WhichBoxOnX, int WhichBoxOnY, int WhichBoxOnZ, int zablokuj) {
+        Color buffor;
+        obrocwZ(Cube, katObrotu);
+        if (zablokuj == 49) {
+            Transform3D transform2 = new Transform3D();
+            transform2.setScale(0);
+            Cube.setTransform(transform2);
+            group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]].detach();
+            mainGroup.removeChild(group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]]);
+            buffor = cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
+            if (katObrotu > 0) {
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3]=buffor;
+            } else {
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][5]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2];
+               cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2]=buffor;
+            }
+            newCube(WhichBoxOnX - 1, WhichBoxOnY - 1, WhichBoxOnZ - 1, WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]);
         }
     }
 
@@ -258,102 +316,388 @@ class kostka_rubkia extends Applet implements KeyListener {
     public void keyTyped(KeyEvent e) {
 
     }
+    
+    public void rotE(int WhichCube){
+          for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[2][2][2];
+                    WhereAreCubes[2][2][2] = WhereAreCubes[2][2][0];
+                    WhereAreCubes[2][2][0] = WhereAreCubes[2][0][0];
+                    WhereAreCubes[2][0][0] = WhereAreCubes[2][0][2];
+                    WhereAreCubes[2][0][2] = WhichCube;
+                    WhichCube = WhereAreCubes[2][2][1];
+                    WhereAreCubes[2][2][1] = WhereAreCubes[2][1][0];
+                    WhereAreCubes[2][1][0] = WhereAreCubes[2][0][1];
+                    WhereAreCubes[2][0][1] = WhereAreCubes[2][1][2];
+                    WhereAreCubes[2][1][2] = WhichCube;
+                }
+                for (int y = 0; y < 3; y++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateX(TransformCube[WhereAreCubes[2][y][z]], Math.PI / 100, 2, y, z, i);
+                    }
+                }
+            }
+    }
+     public void rotR(int WhichCube){
+         for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[2][2][0];
+                    WhereAreCubes[2][2][0] = WhereAreCubes[2][2][2];
+                    WhereAreCubes[2][2][2] = WhereAreCubes[2][0][2];
+                    WhereAreCubes[2][0][2] = WhereAreCubes[2][0][0];
+                    WhereAreCubes[2][0][0] = WhichCube;
+                    WhichCube = WhereAreCubes[2][1][0];
+                    WhereAreCubes[2][1][0] = WhereAreCubes[2][2][1];
+                    WhereAreCubes[2][2][1] = WhereAreCubes[2][1][2];
+                    WhereAreCubes[2][1][2] = WhereAreCubes[2][0][1];
+                    WhereAreCubes[2][0][1] = WhichCube;
+                }
+                for (int y = 0; y < 3; y++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateX(TransformCube[WhereAreCubes[2][y][z]], -Math.PI / 100, 2, y, z, i);
+                    }
+                }
+            }
+    }
+    public void rotQ(int WhichCube){
+           for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][2];
+                    WhereAreCubes[0][2][2] = WhereAreCubes[0][2][0];
+                    WhereAreCubes[0][2][0] = WhereAreCubes[0][0][0];
+                    WhereAreCubes[0][0][0] = WhereAreCubes[0][0][2];
+                    WhereAreCubes[0][0][2] = WhichCube;
+                    WhichCube = WhereAreCubes[0][2][1];
+                    WhereAreCubes[0][2][1] = WhereAreCubes[0][1][0];
+                    WhereAreCubes[0][1][0] = WhereAreCubes[0][0][1];
+                    WhereAreCubes[0][0][1] = WhereAreCubes[0][1][2];
+                    WhereAreCubes[0][1][2] = WhichCube;
+                }
+                for (int y = 0; y < 3; y++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateX(TransformCube[WhereAreCubes[0][y][z]], Math.PI / 100, 0, y, z, i);
+                    }
+                }
+            }
+    }
+    public void rotW(int WhichCube){
+          for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][0];
+                    WhereAreCubes[0][2][0] = WhereAreCubes[0][2][2];
+                    WhereAreCubes[0][2][2] = WhereAreCubes[0][0][2];
+                    WhereAreCubes[0][0][2] = WhereAreCubes[0][0][0];
+                    WhereAreCubes[0][0][0] = WhichCube;
+                    WhichCube = WhereAreCubes[0][1][0];
+                    WhereAreCubes[0][1][0] = WhereAreCubes[0][2][1];
+                    WhereAreCubes[0][2][1] = WhereAreCubes[0][1][2];
+                    WhereAreCubes[0][1][2] = WhereAreCubes[0][0][1];
+                    WhereAreCubes[0][0][1] = WhichCube;
+                }
+                for (int y = 0; y < 3; y++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateX(TransformCube[WhereAreCubes[0][y][z]], -Math.PI / 100, 0, y, z, i);
+                    }
+                }
+            }
+    }
+    public void rotA(int WhichCube){
+          for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][0];
+                    WhereAreCubes[0][2][0] = WhereAreCubes[2][2][0];
+                    WhereAreCubes[2][2][0] = WhereAreCubes[2][2][2];
+                    WhereAreCubes[2][2][2] = WhereAreCubes[0][2][2];
+                    WhereAreCubes[0][2][2] = WhichCube;
+                    WhichCube = WhereAreCubes[0][2][1];
+                    WhereAreCubes[0][2][1] = WhereAreCubes[1][2][0];
+                    WhereAreCubes[1][2][0] = WhereAreCubes[2][2][1];
+                    WhereAreCubes[2][2][1] = WhereAreCubes[1][2][2];
+                    WhereAreCubes[1][2][2] = WhichCube;
 
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateY(TransformCube[WhereAreCubes[x][2][z]], Math.PI / 100, x, 2, z, i);
+                    }
+                }
+            }
+    }
+    public void rotS(int WhichCube){
+           for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][0];
+                    WhereAreCubes[0][2][0] = WhereAreCubes[0][2][2];
+                    WhereAreCubes[0][2][2] = WhereAreCubes[2][2][2];
+                    WhereAreCubes[2][2][2] = WhereAreCubes[2][2][0];
+                    WhereAreCubes[2][2][0] = WhichCube;
+                    WhichCube = WhereAreCubes[0][2][1];
+                    WhereAreCubes[0][2][1] = WhereAreCubes[1][2][2];
+                    WhereAreCubes[1][2][2] = WhereAreCubes[2][2][1];
+                    WhereAreCubes[2][2][1] = WhereAreCubes[1][2][0];
+                    WhereAreCubes[1][2][0] = WhichCube;
+
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateY(TransformCube[WhereAreCubes[x][2][z]], -Math.PI / 100, x, 2, z, i);
+
+                    }
+                }
+            }
+    }
+    public void rotD(int WhichCube){
+          for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][0][0];
+                    WhereAreCubes[0][0][0] = WhereAreCubes[2][0][0];
+                    WhereAreCubes[2][0][0] = WhereAreCubes[2][0][2];
+                    WhereAreCubes[2][0][2] = WhereAreCubes[0][0][2];
+                    WhereAreCubes[0][0][2] = WhichCube;
+                    WhichCube = WhereAreCubes[1][0][0];
+                    WhereAreCubes[1][0][0] = WhereAreCubes[2][0][1];
+                    WhereAreCubes[2][0][1] = WhereAreCubes[1][0][2];
+                    WhereAreCubes[1][0][2] = WhereAreCubes[0][0][1];
+                    WhereAreCubes[0][0][1] = WhichCube;
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateY(TransformCube[WhereAreCubes[x][0][z]], Math.PI / 100, x, 0, z, i);
+                    }
+                }
+            }
+    }
+    public void rotF(int WhichCube){
+          for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][0][0];
+                    WhereAreCubes[0][0][0] = WhereAreCubes[0][0][2];
+                    WhereAreCubes[0][0][2] = WhereAreCubes[2][0][2];
+                    WhereAreCubes[2][0][2] = WhereAreCubes[2][0][0];
+                    WhereAreCubes[2][0][0] = WhichCube;
+                    WhichCube = WhereAreCubes[1][0][0];
+                    WhereAreCubes[1][0][0] = WhereAreCubes[0][0][1];
+                    WhereAreCubes[0][0][1] = WhereAreCubes[1][0][2];
+                    WhereAreCubes[1][0][2] = WhereAreCubes[2][0][1];
+                    WhereAreCubes[2][0][1] = WhichCube;
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int z = 0; z < 3; z++) {
+                        RotateY(TransformCube[WhereAreCubes[x][0][z]], -Math.PI / 100, x, 0, z, i);
+                    }
+                }
+            }
+    }
+    public void rotZ(int WhichCube){
+           for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][2];
+                    WhereAreCubes[0][2][2] = WhereAreCubes[2][2][2];
+                    WhereAreCubes[2][2][2] = WhereAreCubes[2][0][2];
+                    WhereAreCubes[2][0][2] = WhereAreCubes[0][0][2];
+                    WhereAreCubes[0][0][2] = WhichCube;
+                    WhichCube = WhereAreCubes[1][2][2];
+                    WhereAreCubes[1][2][2] = WhereAreCubes[2][1][2];
+                    WhereAreCubes[2][1][2] = WhereAreCubes[1][0][2];
+                    WhereAreCubes[1][0][2] = WhereAreCubes[0][1][2];
+                    WhereAreCubes[0][1][2] = WhichCube;
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int y = 0; y < 3; y++) {
+                        RotateZ(TransformCube[WhereAreCubes[x][y][2]], Math.PI / 100, x, y, 2, i);
+                    }
+                }
+            }
+    }
+    public void rotX(int WhichCube){
+          for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][2];
+                    WhereAreCubes[0][2][2] = WhereAreCubes[0][0][2];
+                    WhereAreCubes[0][0][2] = WhereAreCubes[2][0][2];
+                    WhereAreCubes[2][0][2] = WhereAreCubes[2][2][2];
+                    WhereAreCubes[2][2][2] = WhichCube;
+                    WhichCube = WhereAreCubes[1][2][2];
+                    WhereAreCubes[1][2][2] = WhereAreCubes[0][1][2];
+                    WhereAreCubes[0][1][2] = WhereAreCubes[1][0][2];
+                    WhereAreCubes[1][0][2] = WhereAreCubes[2][1][2];
+                    WhereAreCubes[2][1][2] = WhichCube;
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int y = 0; y < 3; y++) {
+                        RotateZ(TransformCube[WhereAreCubes[x][y][2]], -Math.PI / 100, x, y, 2, i);
+                    }
+                }
+            }
+    }
+    public void rotC(int WhichCube){
+           for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][0];
+                    WhereAreCubes[0][2][0] = WhereAreCubes[2][2][0];
+                    WhereAreCubes[2][2][0] = WhereAreCubes[2][0][0];
+                    WhereAreCubes[2][0][0] = WhereAreCubes[0][0][0];
+                    WhereAreCubes[0][0][0] = WhichCube;
+                    WhichCube = WhereAreCubes[1][2][0];
+                    WhereAreCubes[1][2][0] = WhereAreCubes[2][1][0];
+                    WhereAreCubes[2][1][0] = WhereAreCubes[1][0][0];
+                    WhereAreCubes[1][0][0] = WhereAreCubes[0][1][0];
+                    WhereAreCubes[0][1][0] = WhichCube;
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int y = 0; y < 3; y++) {
+                        RotateZ(TransformCube[WhereAreCubes[x][y][0]], Math.PI / 100, x, y, 0, i);
+                    }
+                }
+            }
+    }
+    public void rotV(int WhichCube){
+           for (int i = 0; i < 50; i++) {
+                if (i == 49) {
+                    WhichCube = WhereAreCubes[0][2][0];
+                    WhereAreCubes[0][2][0] = WhereAreCubes[0][0][0];
+                    WhereAreCubes[0][0][0] = WhereAreCubes[2][0][0];
+                    WhereAreCubes[2][0][0] = WhereAreCubes[2][2][0];
+                    WhereAreCubes[2][2][0] = WhichCube;
+                    WhichCube = WhereAreCubes[1][2][0];
+                    WhereAreCubes[1][2][0] = WhereAreCubes[0][1][0];
+                    WhereAreCubes[0][1][0] = WhereAreCubes[1][0][0];
+                    WhereAreCubes[1][0][0] = WhereAreCubes[2][1][0];
+                    WhereAreCubes[2][1][0] = WhichCube;
+                }
+                for (int x = 0; x < 3; x++) {
+                    for (int y = 0; y < 3; y++) {
+                        RotateZ(TransformCube[WhereAreCubes[x][y][0]], -Math.PI / 100, x, y, 0, i);
+                    }
+                }
+            }
+    }
+    public void randomizeCube(int WhichCube){
+         Random rand = new Random();
+           int losowanie = 0;
+           for (int x = 0; x < 20; x++) {
+                losowanie=rand.nextInt((12 - 1) + 1) + 1;
+                switch(losowanie){
+                    case 1:  rotE(WhichCube); break;
+                    case 2:  rotR(WhichCube); break;
+                    case 3:  rotQ(WhichCube); break;
+                    case 4:  rotW(WhichCube); break;
+                    case 5:  rotA(WhichCube); break;
+                    case 6:  rotS(WhichCube); break;
+                    case 7:  rotD(WhichCube); break;
+                    case 8:  rotF(WhichCube); break;
+                    case 9:  rotZ(WhichCube); break;
+                    case 10: rotX(WhichCube); break;
+                    case 11: rotC(WhichCube); break;
+                    case 12: rotV(WhichCube); break;
+                }        
+            }
+    }
+    private void removeInstruction(){
+        if(instruction == true)
+        {
+            mainGroup.removeChild(textGroup);
+            instruction = false;
+        }
+    }
     @Override
     public void keyPressed(KeyEvent e) {
-        switch (e.getKeyCode()) {
-        case KeyEvent.VK_E:
-            rotateOX(Transformacja_scianaPrawa, Math.PI / 500);
+        int WhichCube = 0;
+        if(!mama){
+            mama=true;
+        switch(e.getKeyCode()){
+        case KeyEvent.VK_E: removeInstruction(); rotE(WhichCube); break;
+        case KeyEvent.VK_R: removeInstruction(); rotR(WhichCube); break;
+        case KeyEvent.VK_Q: removeInstruction(); rotQ(WhichCube); break;
+        case KeyEvent.VK_W: removeInstruction(); rotW(WhichCube); break;
+        case KeyEvent.VK_A: removeInstruction(); rotA(WhichCube); break;
+        case KeyEvent.VK_S: removeInstruction(); rotS(WhichCube); break;
+        case KeyEvent.VK_D: removeInstruction(); rotD(WhichCube); break;
+        case KeyEvent.VK_F: removeInstruction(); rotF(WhichCube); break;
+        case KeyEvent.VK_Z: removeInstruction(); rotZ(WhichCube); break;
+        case KeyEvent.VK_X: removeInstruction(); rotX(WhichCube); break;
+        case KeyEvent.VK_C: removeInstruction(); rotC(WhichCube); break;
+        case KeyEvent.VK_V: removeInstruction(); rotV(WhichCube); break;
+        case KeyEvent.VK_P: 
+        {
+            removeInstruction();
+            for (int x = 0; x < 27; x++) {
+                mainGroup.removeChild(group[x]);
+            }
+            creatInitialCoditions();
+            MakeCube1();
+            Transform3D t3d = new Transform3D();
+            t3d.set(new Vector3f(0.0f, 0f, 17.0f));
+            universe.getViewingPlatform().getViewPlatformTransform().setTransform(t3d);
             break;
-        case KeyEvent.VK_R:
-            rotateOX(Transformacja_scianaPrawa, -Math.PI / 500);
-            break;
-        case KeyEvent.VK_Q:
-            rotateOX(Transformacja_scianaLewa, Math.PI / 500);
-            break;
-        case KeyEvent.VK_W:
-            rotateOX(Transformacja_scianaLewa, -Math.PI / 500);
-            break;
-        case KeyEvent.VK_A:
-            rotateOY(Transformacja_scianazGora, Math.PI / 500);
-            break;
-        case KeyEvent.VK_S:
-            rotateOY(Transformacja_scianaGora, -Math.PI / 500);
-            break;
-        case KeyEvent.VK_D:
-            rotateOY(Transformacja_scianaDol, Math.PI / 500);
-            break;
-        case KeyEvent.VK_F:
-            rotateOY(Transformacja_scianaDol, -Math.PI / 500);
-            break;
-        case KeyEvent.VK_Z:
-            rotateOZ(Transformacja_scianaPrzod, Math.PI / 500);
-            break;
-        case KeyEvent.VK_X:
-            rotateOZ(Transformacja_scianaPrzod, -Math.PI / 500);
-            break;
-        case KeyEvent.VK_C:
-            rotateOZ(Transformacja_scianaTyl, Math.PI / 500);
-            break;
-        case KeyEvent.VK_V:
-            rotateOZ(Transformacja_scianaTyl, -Math.PI / 500);
-            break;
-
         }
-        // if (e.getKeyCode() == KeyEvent.VK_E) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwX(Transformacja_scianaPrawa, Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_R) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwX(Transformacja_scianaPrawa, -Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_Q) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwX(Transformacja_scianaLewa, Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_W) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwX(Transformacja_scianaLewa, -Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_A) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwY(Transformacja_scianaGora, Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_S) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwY(Transformacja_scianaGora, -Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_D) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwY(Transformacja_scianaDol, Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_F) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwY(Transformacja_scianaDol, -Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_Z) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwZ(Transformacja_scianaPrzod, Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_X) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwZ(Transformacja_scianaPrzod, -Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_C) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwZ(Transformacja_scianaTyl, Math.PI / 1000);
-        // }
-        // } else if (e.getKeyCode() == KeyEvent.VK_V) {
-        // for (int i = 0; i < 500; i++) {
-        // obrocwZ(Transformacja_scianaTyl, -Math.PI / 1000);
-        // }
-        // }
+        case KeyEvent.VK_O: removeInstruction(); randomizeCube(WhichCube); break;
+        case KeyEvent.VK_I: 
+        {
+            if(instruction == false){
+            mainGroup.addChild(textGroup);
+            instruction = true;
+            Transform3D t3d = new Transform3D();
+            t3d.set(new Vector3f(0.0f, 0f, 17.0f));
+            universe.getViewingPlatform().getViewPlatformTransform().setTransform(t3d);
+            }
+            break;
+        }
+        }
     }
-
+ }
     @Override
     public void keyReleased(KeyEvent e) {
+        mama=false;
+    }
+    
+    private void addText(String string, float x, float y, float z) {
+		Font3D f3d = new Font3D(new Font("TestFont", Font.PLAIN, 1),new FontExtrusion());
+		Text3D text = new Text3D(f3d, new String(), new Point3f(0.0f,0.0f, 0.0f));
+		 
+		text.setString(string);
+		Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
+		Color3f blue = new Color3f(.6f, 0.2f, 0.6f);
+		Appearance a = new Appearance();
+		Material m = new Material(blue, blue, blue, white, 80.0f);
+		m.setLightingEnable(true);
+		a.setMaterial(m);
 
+		Shape3D sh = new Shape3D();
+		sh.setGeometry(text);
+		sh.setAppearance(a);
+		TransformGroup tg = new TransformGroup();
+		Transform3D t3d = new Transform3D();
+                Transform3D scale = new Transform3D();
+		Vector3f v3f = new Vector3f(x, y, z);
+		t3d.setTranslation(v3f);
+                scale.setScale(0.5);
+                t3d.mul(scale);
+                tg.setTransform(t3d);
+		tg.addChild(sh);
+                textGroup.addChild(tg);
+		
+	}
+    
+    private void creatInstruction(){
+        addText("Q: Obrót lewej ściany o 90*(oś X)",-4,3.5f,3);
+        addText("W: Obrót lewej ściany o -90*(oś X)",-4,3,3);
+        addText("E: Obrót prawej ściany o 90*(oś X)",-4,2.5f,3);
+        addText("R: Obrót prawej ściany o -90*(oś X)",-4,2f,3);
+        addText("A: Obrót górnej ściany o 90*(oś Y)",-4,1.5f,3);
+        addText("S: Obrót górnej ściany o 90*(oś Y)",-4,1f,3);
+        addText("D: Obrót dolnej ściany o 90*(oś Y)",-4,0.5f,3);
+        addText("F: Obrót dolnej ściany o 90*(oś Y)",-4,0f,3);
+        addText("Z: Obrót przedniej ściany o 90*(oś Z)",-4,-0.5f,3);
+        addText("X: Obrót przedniej ściany o 90*(oś Z)",-4,-1f,3);
+        addText("C: Obrót tylnej ściany o 90*(oś Z)",-4,-1.5f,3);
+        addText("V: Obrót tylnej ściany o 90*(oś Z)",-4,-2f,3);
+        addText("O: Mieszanie kostki",-4,-2.5f,3);
+        addText("P: Reset kostki",-4,-3f,3);
+        
+        addText("I: Pokaż mi instrukcje ponownie!!",-4,-3.5f,3);
+        addText("Po Wykonaniu ruchu instrukcje znikną!!",-4,-4f,3);
+        mainGroup.addChild(textGroup);
     }
 
 }
@@ -361,7 +705,8 @@ class kostka_rubkia extends Applet implements KeyListener {
 public class Projekt_kostka_rubkia {
 
     /**
-     * Główna metoda klasy. W niej tworzony jest robot i dodawany jest KeyListener;
+     * Główna metoda klasy. W niej tworzony jest robot i dodawany jest
+     * KeyListener;
      *
      * @param args
      */
