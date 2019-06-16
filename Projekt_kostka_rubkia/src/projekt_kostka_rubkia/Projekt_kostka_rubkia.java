@@ -30,7 +30,6 @@ class kostka_rubkia extends Applet implements KeyListener {
     static SimpleUniverse universe = new SimpleUniverse(canvas);
 
     private TransformGroup TransformCube[];
-    private TransformGroup cubeBuffer[];
     private int WhereAreCubes[][][];
     private Transform3D obrot1 = new Transform3D();
     private Transform3D obrot2 = new Transform3D();
@@ -72,7 +71,6 @@ class kostka_rubkia extends Applet implements KeyListener {
         mainGroup.setCapability(BranchGroup.ALLOW_DETACH);
 
         TransformCube = new TransformGroup[27];
-        cubeBuffer = new TransformGroup[27];
         WhereAreCubes = new int[3][3][3];
         group = new BranchGroup[27];
 
@@ -99,12 +97,6 @@ class kostka_rubkia extends Applet implements KeyListener {
                     case 5: cubeWallsColor[x][color] = Color.YELLOW; break;
                 }
             }
-            cubeBuffer[x] = new TransformGroup();
-            cubeBuffer[x].setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-            cubeBuffer[x].setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-            cubeBuffer[x].setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
-            cubeBuffer[x].setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
-
             group[x] = new BranchGroup();
             group[x].setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
             group[x].setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
@@ -270,6 +262,7 @@ class kostka_rubkia extends Applet implements KeyListener {
             Cube.setTransform(transform2);
             group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]].detach();
             mainGroup.removeChild(group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]]);
+            
             buffor = cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0];
             if (katObrotu > 0) {
                cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][3];
@@ -573,20 +566,20 @@ class kostka_rubkia extends Applet implements KeyListener {
             }
     }
     public void randomizeCube(int WhichCube){
-         Random rand = new Random();
+           Random rand = new Random();
            int losowanie = 0;
            for (int x = 0; x < 20; x++) {
                 losowanie=rand.nextInt((12 - 1) + 1) + 1;
                 switch(losowanie){
-                    case 1:  rotE(WhichCube); break;
+                    case 1:  rotZ(WhichCube); break;
                     case 2:  rotR(WhichCube); break;
-                    case 3:  rotQ(WhichCube); break;
+                    case 3:  rotD(WhichCube); break;
                     case 4:  rotW(WhichCube); break;
                     case 5:  rotA(WhichCube); break;
                     case 6:  rotS(WhichCube); break;
-                    case 7:  rotD(WhichCube); break;
+                    case 7:  rotQ(WhichCube); break;
                     case 8:  rotF(WhichCube); break;
-                    case 9:  rotZ(WhichCube); break;
+                    case 9:  rotE(WhichCube); break;
                     case 10: rotX(WhichCube); break;
                     case 11: rotC(WhichCube); break;
                     case 12: rotV(WhichCube); break;
@@ -604,7 +597,7 @@ class kostka_rubkia extends Applet implements KeyListener {
     public void keyPressed(KeyEvent e) {
         int WhichCube = 0;
         if(!mama){
-            mama=true;
+        mama=true;
         switch(e.getKeyCode()){
         case KeyEvent.VK_E: removeInstruction(); rotE(WhichCube); break;
         case KeyEvent.VK_R: removeInstruction(); rotR(WhichCube); break;
@@ -643,6 +636,14 @@ class kostka_rubkia extends Applet implements KeyListener {
             }
             break;
         }
+        case KeyEvent.VK_U: 
+        {
+            removeInstruction();
+            Transform3D t3d = new Transform3D();
+            t3d.set(new Vector3f(0.0f, 0f, 17.0f));
+            universe.getViewingPlatform().getViewPlatformTransform().setTransform(t3d);
+            break;
+        }
         }
     }
  }
@@ -666,16 +667,16 @@ class kostka_rubkia extends Applet implements KeyListener {
 		Shape3D sh = new Shape3D();
 		sh.setGeometry(text);
 		sh.setAppearance(a);
-		TransformGroup tg = new TransformGroup();
+		TransformGroup tex = new TransformGroup();
 		Transform3D t3d = new Transform3D();
                 Transform3D scale = new Transform3D();
 		Vector3f v3f = new Vector3f(x, y, z);
 		t3d.setTranslation(v3f);
                 scale.setScale(0.5);
                 t3d.mul(scale);
-                tg.setTransform(t3d);
-		tg.addChild(sh);
-                textGroup.addChild(tg);
+                tex.setTransform(t3d);
+		tex.addChild(sh);
+                textGroup.addChild(tex);
 		
 	}
     
@@ -694,9 +695,9 @@ class kostka_rubkia extends Applet implements KeyListener {
         addText("V: Obrót tylnej ściany o 90*(oś Z)",-4,-2f,3);
         addText("O: Mieszanie kostki",-4,-2.5f,3);
         addText("P: Reset kostki",-4,-3f,3);
-        
-        addText("I: Pokaż mi instrukcje ponownie!!",-4,-3.5f,3);
-        addText("Po Wykonaniu ruchu instrukcje znikną!!",-4,-4f,3);
+        addText("U: Reset pozycji kostki do pierwotnej",-4,-3.5f,3);
+        addText("I: Pokaż mi instrukcje ponownie!!",-4,-4f,3);
+        addText("Po Wykonaniu ruchu instrukcje znikną!!",-4,-4.5f,3);
         mainGroup.addChild(textGroup);
     }
 
@@ -713,6 +714,6 @@ public class Projekt_kostka_rubkia {
     public static void main(String[] args) {
         kostka_rubkia Rubix = new kostka_rubkia();
         Rubix.addKeyListener(Rubix);
-        MainFrame mf = new MainFrame(Rubix, 640, 480);
+        MainFrame mf = new MainFrame(Rubix, 640, 520);
     }
 }
