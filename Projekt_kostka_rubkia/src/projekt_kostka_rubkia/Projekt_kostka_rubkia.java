@@ -4,24 +4,16 @@ import java.util.Random;
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
 import javax.media.j3d.*;
 import javax.vecmath.*;
 import com.sun.j3d.utils.applet.MainFrame;
-import com.sun.j3d.utils.behaviors.mouse.MouseRotate;
-import com.sun.j3d.utils.behaviors.mouse.MouseTranslate;
-import com.sun.j3d.utils.behaviors.mouse.MouseZoom;
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.*;
-import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.pickfast.PickCanvas;
 import com.sun.j3d.utils.universe.*;
-import static java.awt.event.KeyEvent.*;
-import static java.lang.Math.sqrt;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static javafx.scene.input.KeyCode.*;
 
 class kostka_rubkia extends Applet implements KeyListener {
 
@@ -32,16 +24,12 @@ class kostka_rubkia extends Applet implements KeyListener {
     private TransformGroup TransformCube[];
     private int WhereAreCubes[][][];
     private Transform3D obrot1 = new Transform3D();
-    private Transform3D obrot2 = new Transform3D();
     private Box box;
     private BranchGroup group[];
     private BranchGroup mainGroup;
     private BranchGroup textGroup;
     private PickCanvas pickCanvas;
     private TransformGroup boxTransformGroup;
-    private Transform3D transform = new Transform3D();
-    private Vector3f position = new Vector3f();
-    private Vector3f position1 = new Vector3f();
     private boolean instruction = true;
     private boolean mama = false;
     private Color cubeWallsColor[][] = new Color[27][6];
@@ -237,6 +225,7 @@ class kostka_rubkia extends Applet implements KeyListener {
             Cube.setTransform(transform2);
             group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]].detach();
             mainGroup.removeChild(group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]]);
+            
             buffor = cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0];
             if (katObrotu > 0) {
                cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][0]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
@@ -289,6 +278,7 @@ class kostka_rubkia extends Applet implements KeyListener {
             Cube.setTransform(transform2);
             group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]].detach();
             mainGroup.removeChild(group[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]]);
+            
             buffor = cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4];
             if (katObrotu > 0) {
                cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][4]=cubeWallsColor[WhereAreCubes[WhichBoxOnX][WhichBoxOnY][WhichBoxOnZ]][2];
